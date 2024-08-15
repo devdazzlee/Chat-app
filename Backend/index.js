@@ -16,7 +16,7 @@ const io = new Server(server, {
     cors: {
         origin: '*',
         methods: ['GET', 'POST'],
-        credentials: true
+        credentials: true,
     }
 });
 
@@ -24,7 +24,8 @@ const io = new Server(server, {
 // Middleware
 app.use(cors({
     origin: 'https://chat-app-9wql.vercel.app',
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
 }));
 
 
