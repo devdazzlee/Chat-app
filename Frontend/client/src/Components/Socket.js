@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const Socket = io('http://localhost:5000', {
+const Socket = io('https://chat-app-sand-phi.vercel.app', {
     withCredentials: true,
     extraHeaders: {
         "my-custom-header": "abcd"

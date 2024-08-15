@@ -3,7 +3,7 @@
     import axios from 'axios';
     import './Chat.css'; // Import custom styles
 
-    const socket = io('http://localhost:5000', { withCredentials: true });
+    const socket = io('https://chat-app-sand-phi.vercel.app', { withCredentials: true });
 
     const Chat = () => {
         const [users, setUsers] = useState([]);
@@ -21,14 +21,14 @@
         useEffect(() => {
             const fetchInitialData = async () => {
                 try {
-                    const userRes = await axios.get('http://localhost:5000/api/users', { withCredentials: true });
+                    const userRes = await axios.get('https://chat-app-sand-phi.vercel.app/api/users', { withCredentials: true });
                     setUsers(userRes.data);
 
-                    const profileRes = await axios.get('http://localhost:5000/api/profile', { withCredentials: true });
+                    const profileRes = await axios.get('https://chat-app-sand-phi.vercel.app/api/profile', { withCredentials: true });
                     setUserId(profileRes.data.id);
                     socket.emit('join', profileRes.data.id);
 
-                    const groupRes = await axios.get('http://localhost:5000/api/groups', { withCredentials: true });
+                    const groupRes = await axios.get('https://chat-app-sand-phi.vercel.app/api/groups', { withCredentials: true });
                     setGroups(groupRes.data);
                 } catch (err) {
                     console.error('Error fetching initial data:', err);
@@ -53,7 +53,7 @@
         useEffect(() => {
             if (currentChat) {
                 // Fetch messages when currentChat changes
-                axios.get(`http://localhost:5000/api/messages/${currentChat}`, { withCredentials: true })
+                axios.get(`https://chat-app-sand-phi.vercel.app/api/messages/${currentChat}`, { withCredentials: true })
                     .then(res => setMessages(res.data))
                     .catch(err => console.error('Error fetching messages:', err));
             }
@@ -61,7 +61,7 @@
 
         useEffect(() => {
             // Fetch groups when a group is created or deleted
-            axios.get('http://localhost:5000/api/groups', { withCredentials: true })
+            axios.get('https://chat-app-sand-phi.vercel.app/api/groups', { withCredentials: true })
                 .then(res => setGroups(res.data))
                 .catch(err => console.error('Error fetching groups:', err));
         }, [currentChat]);
@@ -79,7 +79,7 @@
                 };
                 setMessages(prevMessages => [...prevMessages, messageData]);
 
-                axios.post('http://localhost:5000/api/messages', messageData, { withCredentials: true })
+                axios.post('https://chat-app-sand-phi.vercel.app/api/messages', messageData, { withCredentials: true })
                     .then(() => {
                         socket.emit('send_message', messageData);
                         setNewMessage('');
@@ -96,7 +96,7 @@
         };
 
         const createGroup = () => {
-            axios.post('http://localhost:5000/api/groups', {
+            axios.post('https://chat-app-sand-phi.vercel.app/api/groups', {
                 name: groupName,
                 members: selectedMembers
             }, { withCredentials: true })
@@ -110,7 +110,7 @@
         };
 
         const deleteGroup = () => {
-            axios.delete(`http://localhost:5000/api/groups/${groupToDelete}`, { withCredentials: true })
+            axios.delete(`https://chat-app-sand-phi.vercel.app/api/groups/${groupToDelete}`, { withCredentials: true })
                 .then(() => {
                     setGroups(prevGroups => prevGroups.filter(group => group._id !== groupToDelete));
                     setShowDeleteConfirmation(false);

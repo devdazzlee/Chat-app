@@ -10,7 +10,7 @@ const Logout = () => {
     const handleLogout = async () => {
         try {
             // Call the logout API
-            await axios.post('http://localhost:5000/api/logout', {}, { withCredentials: true });
+            await axios.post('https://chat-app-sand-phi.vercel.app/api/logout', {}, { withCredentials: true });
             
             // Remove the token cookie manually
             Cookies.remove('Token');

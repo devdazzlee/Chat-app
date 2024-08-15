@@ -15,7 +15,7 @@ const Login = () => {
         e.preventDefault();
     
         try {
-            const res = await axios.post('http://localhost:5000/api/login', 
+            const res = await axios.post('https://chat-app-sand-phi.vercel.app/api/login', 
                 { username, password },
                 { withCredentials: true } // Ensure cookies are sent with the request
             );
@@ -24,7 +24,7 @@ const Login = () => {
     
             if (res.data.message === 'Login successful') {
                 // Fetch the profile after a successful login
-                const profileRes = await axios.get('http://localhost:5000/api/profile', {
+                const profileRes = await axios.get('https://chat-app-sand-phi.vercel.app/api/profile', {
                     withCredentials: true,
                 });
 
