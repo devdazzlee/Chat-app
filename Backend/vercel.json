@@ -7,14 +7,18 @@
       }
     ],
     "routes": [
-      { "src": "/api/v1/products", "dest": "/index.js" },
-      { "src": "/api/v1/CompletedProject24/:id", "dest": "/index.js" },
-      { "src": "/api/v1/AddProduct", "dest": "/index.js" },
-      { "src": "/api/v1/customer/:id", "dest": "/index.js" },
-      { "src": "/api/v1/updates/:id", "dest": "/index.js" },
-      { "src": "/api/v1/Book-detail/:id", "dest": "/index.js" },
-      { "src": "/process-payment", "dest": "/index.js" },
-      { "src": "/api/messages", "dest": "/index.js" }
+      { "src": "/api/register", "dest": "/index.js" },
+      { "src": "/api/login", "dest": "/index.js" },
+      { "src": "/api/logout", "dest": "/index.js" },
+      { "src": "/api/profile", "dest": "/index.js" },
+      { "src": "/api/users", "dest": "/index.js" },
+      { "src": "/api/messages", "dest": "/index.js" },
+      { "src": "/api/messages/:userId", "dest": "/index.js" },
+      { "src": "/api/messages/group", "dest": "/index.js" },
+      { "src": "/api/groups", "dest": "/index.js" },
+      { "src": "/api/groups/leave", "dest": "/index.js" },
+      { "src": "/api/groups/:groupId", "dest": "/index.js" },
+      { "src": "/process-payment", "dest": "/index.js" }
     ]
   }
   
