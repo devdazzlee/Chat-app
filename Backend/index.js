@@ -14,17 +14,26 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'https://chat-app-9wql.vercel.app',
+        origin: '*',
         methods: ['GET', 'POST'],
         credentials: true
     }
 });
+
 
 // Middleware
 app.use(cors({
     origin: 'https://chat-app-9wql.vercel.app',
     credentials: true
 }));
+
+
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://chat-app-9wql.vercel.app');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
+
 app.use(express.json());
 app.use(cookieParser());
 
