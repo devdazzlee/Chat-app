@@ -16,7 +16,7 @@ export const ProfileProvider = ({ children }) => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await axios.get('https://chat-app-sand-phi.vercel.app/api/profile', {
+                const response = await axios.get('http://localhost:5000/api/profile', {
                     withCredentials: true, // Ensure cookies are sent
                     headers: {
                         'Cache-Control': 'no-cache',

@@ -3,10 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './Chat.css'; // Import custom styles
 
-const socket = io('https://chat-app-sand-phi.vercel.app', { 
-    withCredentials: true,
-    transports: ['websocket'], // Optional: Use WebSocket transport only
-});
+const socket = io('http://localhost:5000', { withCredentials: true });
 
 const Chat = () => {
     const [users, setUsers] = useState([]);
@@ -18,20 +15,18 @@ const Chat = () => {
     const [showCreateGroup, setShowCreateGroup] = useState(false);
     const [groupName, setGroupName] = useState('');
     const [selectedMembers, setSelectedMembers] = useState([]);
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const [groupToDelete, setGroupToDelete] = useState(null);
 
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const userRes = await axios.get('https://chat-app-sand-phi.vercel.app/api/users', { withCredentials: true });
+                const userRes = await axios.get('http://localhost:5000/api/users', { withCredentials: true });
                 setUsers(userRes.data);
 
-                const profileRes = await axios.get('https://chat-app-sand-phi.vercel.app/api/profile', { withCredentials: true });
+                const profileRes = await axios.get('http://localhost:5000/api/profile', { withCredentials: true });
                 setUserId(profileRes.data.id);
                 socket.emit('join', profileRes.data.id);
 
-                const groupRes = await axios.get('https://chat-app-sand-phi.vercel.app/api/groups', { withCredentials: true });
+                const groupRes = await axios.get('http://localhost:5000/api/groups', { withCredentials: true });
                 setGroups(groupRes.data);
             } catch (err) {
                 console.error('Error fetching initial data:', err);
@@ -55,16 +50,12 @@ const Chat = () => {
 
     useEffect(() => {
         if (currentChat) {
-            axios.get(`https://chat-app-sand-phi.vercel.app/api/messages/${currentChat}`, { withCredentials: true })
-                .then(res => setMessages(res.data))
+            axios.get(`http://localhost:5000/api/messages/${currentChat}`, { withCredentials: true })
+                .then(res => {
+                    setMessages(res.data);
+                })
                 .catch(err => console.error('Error fetching messages:', err));
         }
-    }, [currentChat]);
-
-    useEffect(() => {
-        axios.get('https://chat-app-sand-phi.vercel.app/api/groups', { withCredentials: true })
-            .then(res => setGroups(res.data))
-            .catch(err => console.error('Error fetching groups:', err));
     }, [currentChat]);
 
     const fetchMessages = (chatId) => {
@@ -78,16 +69,19 @@ const Chat = () => {
                 to: currentChat,
                 message: newMessage
             };
+    
+            // Directly update the messages state with the new message data
             setMessages(prevMessages => [...prevMessages, messageData]);
-
-            axios.post('https://chat-app-sand-phi.vercel.app/api/messages', messageData, { withCredentials: true })
-                .then(() => {
-                    socket.emit('send_message', messageData);
-                    setNewMessage('');
+    
+            axios.post('http://localhost:5000/api/messages', messageData, { withCredentials: true })
+                .then((res) => {
+                    socket.emit('send_message', res.data);
+                    setNewMessage(''); // Clear the input field after sending
                 })
                 .catch(err => console.error('Error sending message:', err));
         }
     };
+    
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
@@ -97,7 +91,7 @@ const Chat = () => {
     };
 
     const createGroup = () => {
-        axios.post('https://chat-app-sand-phi.vercel.app/api/groups', {
+        axios.post('http://localhost:5000/api/groups', {
             name: groupName,
             members: selectedMembers
         }, { withCredentials: true })
@@ -108,25 +102,6 @@ const Chat = () => {
                 setSelectedMembers([]);
             })
             .catch(err => console.error('Error creating group:', err));
-    };
-
-    const deleteGroup = () => {
-        axios.delete(`https://chat-app-sand-phi.vercel.app/api/groups/${groupToDelete}`, { withCredentials: true })
-            .then(() => {
-                setGroups(prevGroups => prevGroups.filter(group => group._id !== groupToDelete));
-                setShowDeleteConfirmation(false);
-                setGroupToDelete(null);
-                if (currentChat === groupToDelete) {
-                    setCurrentChat(null);
-                    setMessages([]);
-                }
-            })
-            .catch(err => console.error('Error deleting group:', err));
-    };
-
-    const handleDeleteGroup = (groupId) => {
-        setGroupToDelete(groupId);
-        setShowDeleteConfirmation(true);
     };
 
     return (
@@ -162,7 +137,6 @@ const Chat = () => {
                             <div className="user-info">
                                 <span className="username">{group.name}</span>
                             </div>
-                            <button className="delete-group-button" onClick={() => handleDeleteGroup(group._id)}>Delete</button>
                         </div>
                     ))}
                 </div>
@@ -179,17 +153,21 @@ const Chat = () => {
                             </div>
                         </div>
                         <div className="messages">
-                            {messages.map((msg, index) => (
-                                <div
-                                    key={index}
-                                    className={`message ${msg.from === userId ? 'sent' : 'received'}`}
-                                >
-                                    <div className="message-content">
-                                        <strong>{msg.from === userId ? 'You' : 'Them'}:</strong> {msg.message}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+    {messages.map((msg, index) => {
+        const isSentByCurrentUser = msg.from === userId;
+        return (
+            <div
+                key={index}
+                className={`message ${isSentByCurrentUser ? 'sent' : 'received'}`}
+            >
+                <div className="message-content">
+                    <strong>{isSentByCurrentUser ? 'You' : 'Them'}:</strong> {msg.message}
+                </div>
+            </div>
+        );
+    })}
+</div>
+
                         <div className="message-input">
                             <input
                                 type="text"
@@ -240,16 +218,6 @@ const Chat = () => {
                         </div>
                         <button onClick={createGroup}>Create</button>
                         <button onClick={() => setShowCreateGroup(false)}>Cancel</button>
-                    </div>
-                </div>
-            )}
-
-            {showDeleteConfirmation && (
-                <div className="delete-confirmation-modal">
-                    <div className="delete-confirmation-content">
-                        <h2>Are you sure you want to delete this group?</h2>
-                        <button onClick={deleteGroup}>Yes</button>
-                        <button onClick={() => setShowDeleteConfirmation(false)}>No</button>
                     </div>
                 </div>
             )}

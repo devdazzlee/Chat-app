@@ -14,27 +14,17 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*',
+        origin: 'http://localhost:3000',
         methods: ['GET', 'POST'],
-        credentials: true,
+        credentials: true
     }
 });
 
-
 // Middleware
 app.use(cors({
-    origin: 'https://chat-app-9wql.vercel.app',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
+    origin: 'http://localhost:3000',
+    credentials: true
 }));
-
-
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://chat-app-9wql.vercel.app');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
-});
-
 app.use(express.json());
 app.use(cookieParser());
 
@@ -52,10 +42,10 @@ const authenticateToken = (req, res, next) => {
             }
         }
         req.user = user;
+        console.log("User attached to req:", req.user); // Add this line for debugging
         next();
     });
 };
-
 
 // API Endpoints
 app.post('/api/register', async (req, res) => {
@@ -162,49 +152,7 @@ app.get('/api/messages/:userId', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-// Create a new group
-app.post('/api/messages/group', authenticateToken, async (req, res) => {
-    const { groupId, message } = req.body;
-    try {
-        const group = await Group.findById(groupId);
-        if (!group || !group.members.includes(req.user.id)) {
-            return res.status(403).json({ message: 'Access denied' });
-        }
-
-        const newMessage = new Message({
-            from: req.user.id,
-            group: groupId,
-            message
-        });
-        await newMessage.save();
-
-        // Emit message to all group members
-        group.members.forEach(memberId => {
-            io.to(memberId.toString()).emit('new_message', { from: req.user.id, message, group: groupId });
-        });
-        res.status(201).json({ message: 'Message sent' });
-    } catch (err) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-app.post('/api/groups/leave', authenticateToken, async (req, res) => {
-    const { groupId } = req.body;
-    try {
-        const group = await Group.findById(groupId);
-        if (!group || !group.members.includes(req.user.id)) {
-            return res.status(403).json({ message: 'Access denied' });
-        }
-
-        group.members = group.members.filter(memberId => memberId.toString() !== req.user.id);
-        await group.save();
-
-        res.status(200).json({ message: 'Left group successfully' });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to leave group' });
-    }
-});
-
-app.post('/api/groups', authenticateToken, async (req, res) => {
+app.post('/api//groups', async (req, res) => {
     const { name, members } = req.body;
     try {
         const group = new Group({ name, members });
@@ -215,30 +163,14 @@ app.post('/api/groups', authenticateToken, async (req, res) => {
     }
 });
 
-// Get all groups for the authenticated user
+// Get all groups for a user
 app.get('/api/groups', authenticateToken, async (req, res) => {
-    const userId = req.user.id; // Ensure correct user ID field
+    const userId = req.user._id;
     try {
         const groups = await Group.find({ members: userId }).populate('members', 'username');
         res.status(200).json(groups);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch groups' });
-    }
-});
-
-app.delete('/api/groups/:groupId', authenticateToken, async (req, res) => {
-    const { groupId } = req.params;
-    try {
-        // Ensure the user is a member of the group
-        const group = await Group.findById(groupId);
-        if (!group || !group.members.includes(req.user.id)) {
-            return res.status(403).json({ message: 'Access denied' });
-        }
-
-        await Group.findByIdAndDelete(groupId);
-        res.status(200).json({ message: 'Group deleted successfully' });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to delete group' });
     }
 });
 
