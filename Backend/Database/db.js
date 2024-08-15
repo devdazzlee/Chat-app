@@ -18,6 +18,31 @@ const messageSchema = new mongoose.Schema({
 });
 
 export const Message = mongoose.model('Message', messageSchema);
+const groupSchema = new mongoose.Schema({
+  name: {
+      type: String,
+      required: true,
+  },
+  members: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+  }],
+  messages: [{
+      from: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+      },
+      message: {
+          type: String,
+      },
+      createdAt: {
+          type: Date,
+          default: Date.now,
+      },
+  }],
+});
+
+export const Group = mongoose.model('Group', groupSchema);
 
 
 // Connect to MongoDB

@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import { Server } from 'socket.io';
 import http from 'http';
-import { User, Message } from './Database/db.js'; // Import your Mongoose models
+import { User, Message, Group } from './Database/db.js'; // Import your Mongoose models
 
 dotenv.config();
 
@@ -45,6 +45,7 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
 
 // API Endpoints
 app.post('/api/register', async (req, res) => {
@@ -151,6 +152,86 @@ app.get('/api/messages/:userId', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+// Create a new group
+app.post('/api/messages/group', authenticateToken, async (req, res) => {
+    const { groupId, message } = req.body;
+    try {
+        const group = await Group.findById(groupId);
+        if (!group || !group.members.includes(req.user.id)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const newMessage = new Message({
+            from: req.user.id,
+            group: groupId,
+            message
+        });
+        await newMessage.save();
+
+        // Emit message to all group members
+        group.members.forEach(memberId => {
+            io.to(memberId.toString()).emit('new_message', { from: req.user.id, message, group: groupId });
+        });
+        res.status(201).json({ message: 'Message sent' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+app.post('/api/groups/leave', authenticateToken, async (req, res) => {
+    const { groupId } = req.body;
+    try {
+        const group = await Group.findById(groupId);
+        if (!group || !group.members.includes(req.user.id)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        group.members = group.members.filter(memberId => memberId.toString() !== req.user.id);
+        await group.save();
+
+        res.status(200).json({ message: 'Left group successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to leave group' });
+    }
+});
+
+app.post('/api/groups', authenticateToken, async (req, res) => {
+    const { name, members } = req.body;
+    try {
+        const group = new Group({ name, members });
+        await group.save();
+        res.status(201).json(group);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create group' });
+    }
+});
+
+// Get all groups for the authenticated user
+app.get('/api/groups', authenticateToken, async (req, res) => {
+    const userId = req.user.id; // Ensure correct user ID field
+    try {
+        const groups = await Group.find({ members: userId }).populate('members', 'username');
+        res.status(200).json(groups);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch groups' });
+    }
+});
+
+app.delete('/api/groups/:groupId', authenticateToken, async (req, res) => {
+    const { groupId } = req.params;
+    try {
+        // Ensure the user is a member of the group
+        const group = await Group.findById(groupId);
+        if (!group || !group.members.includes(req.user.id)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        await Group.findByIdAndDelete(groupId);
+        res.status(200).json({ message: 'Group deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete group' });
+    }
+});
+
 
 // Socket.IO connection handling
 // Socket.IO connection handling
@@ -172,6 +253,7 @@ io.on('connection', (socket) => {
         console.log('User disconnected');
     });
 });
+
 
 
 // Start server
